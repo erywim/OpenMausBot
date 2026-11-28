@@ -150,9 +150,9 @@ export function AutomationCaption({ message, line, botId }: { message: Message; 
     !state.bots.find((bot) => bot.id === botId)?.messages.some((later) => later.role === "user" && later.at > message.at));
   const tone = line.partial ? "text-warning" : line.failed ? "text-danger" : asking ? "text-warning" : "text-accent";
   return (
-    <div data-automation-caption={line.runId} className="-mb-2 flex min-w-0 items-center gap-1.5 pl-0.5 text-[11px] text-ink-tertiary">
+    <div data-automation-caption={line.runId} className="-mb-2 mt-1 flex min-w-0 items-center gap-1.5 border-t border-hairline/40 pt-2 pl-0.5 text-[11px] text-ink-secondary">
       <Zap aria-hidden="true" size={12} className={cn("shrink-0", tone)} />
-      <span className="truncate font-medium text-ink-secondary">{line.name}</span>
+      <span className="truncate font-medium text-ink">{line.name}</span>
       <time className="shrink-0" dateTime={new Date(line.scheduledFor).toISOString()}>· {formatTime(line.scheduledFor)}</time>
       {(line.failed || asking) && <span className={cn("shrink-0", tone)}>· {t(line.partial ? "chat.automation.partial" : line.failed ? "chat.automation.failed" : "chat.automation.needsYou")}</span>}
       {canOpen && (
