@@ -7695,6 +7695,7 @@
   "teamMemory.addEntry": "Add an entry",
   "apiInstances.title": "More servers",
   "apiInstances.subtitle": "Add another OpenAI-compatible server with its own base URL and API key. Every bot can choose it.",
+  "apiInstances.noShellHint": "Bots on this engine have no terminal or workspace files. To keep them while using a gateway, add it as a Claude or Codex custom endpoint instead.",
   "apiInstances.name": "Display name",
   "apiInstances.url": "Base URL",
   "apiInstances.key": "API key",

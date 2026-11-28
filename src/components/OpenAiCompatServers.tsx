@@ -136,6 +136,7 @@ function AddedServers({ servers }: { servers: ReturnType<typeof addedServers> })
     <div data-api-keys-other>
       <div className="mb-0.5 text-[13px] font-medium leading-[18px] text-ink">{t("apiInstances.title")}</div>
       <p className="mb-2 text-[12px] leading-4 text-ink-secondary">{t("apiInstances.subtitle")}</p>
+      <p className="mb-2 text-[12px] leading-4 text-ink-secondary">{t("apiInstances.noShellHint")}</p>
       {servers.length === 0 && <p className="text-[12px] leading-4 text-ink-secondary">{t("apiInstances.empty")}</p>}
       {servers.map((server) => {
         const newUrl = editUrl.trim().replace(/\/+$/, "");

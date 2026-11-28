@@ -58,6 +58,12 @@ describe("other OpenAI-compatible servers", () => {
     expect(html).toContain("No other servers yet.");
   });
 
+  it("says a bot on this engine has no terminal or workspace files", () => {
+    const html = render([instance("openaiCompat", "Other (OpenAI-compatible)")]);
+    expect(html).toContain("no terminal or workspace files");
+    expect(html).toContain("Claude or Codex custom endpoint");
+  });
+
   it("reads model IDs separated by commas, CJK commas or spaces", () => {
     expect(modelIds("glm-4.6, glm-5，glm-4.6、qwen3 ")).toEqual(["glm-4.6", "glm-5", "qwen3"]);
     expect(modelIds("  ")).toEqual([]);

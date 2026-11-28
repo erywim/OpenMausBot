@@ -7306,6 +7306,7 @@
   "teamMemory.addEntry": "Adicionar uma entrada",
   "apiInstances.title": "Mais servidores",
   "apiInstances.subtitle": "Adicione outro servidor compatível com a OpenAI, com URL base e chave de API próprias. Todo bot pode escolhê-lo.",
+  "apiInstances.noShellHint": "Bots neste mecanismo não têm terminal nem arquivos de espaço de trabalho. Para mantê-los ao usar um gateway, adicione-o como endpoint personalizado do Claude ou do Codex.",
   "apiInstances.name": "Nome de exibição",
   "apiInstances.url": "URL base",
   "apiInstances.key": "Chave de API",
