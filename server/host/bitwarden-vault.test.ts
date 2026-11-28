@@ -23,8 +23,8 @@ const ITEMS: FakeBwItem[] = [
   { id: "i-dup-2", name: "Deploy", type: 1, login: { password: "fake-deploy-2" } },
 ];
 
-function setup(options: { credentials?: typeof CREDENTIALS | null; now?: () => number } = {}) {
-  const fake = fakeBw({ ...CREDENTIALS, email: "bot@acme.test", items: ITEMS });
+function setup(options: { credentials?: typeof CREDENTIALS | null; now?: () => number; organizations?: Array<{ id: string; name?: string; items: FakeBwItem[] }> } = {}) {
+  const fake = fakeBw({ ...CREDENTIALS, email: "bot@acme.test", items: ITEMS, ...(options.organizations ? { organizations: options.organizations } : {}) });
   let saved = options.credentials === undefined ? CREDENTIALS : options.credentials;
   let forgotten = 0;
   const vault = new BitwardenLogins({ credentials: () => saved, run: fake.run, now: options.now, forgetAppData: () => { forgotten++; } });
@@ -36,13 +36,22 @@ describe("Bitwarden through its command line tool", () => {
     const { vault, fake } = setup();
     expect(await vault.refresh(CREDENTIALS)).toEqual({ connected: true, server: "vault.bitwarden.com", account: "bot@acme.test", items: 3 });
     expect(fake.calls).toEqual(["status", "config server https://vault.bitwarden.com", "login --apikey", "unlock --passwordenv BW_PASSWORD --raw", "status [session]",
-      "sync [session]", "list items [session]"]);
+      "sync [session]", "list items [session]", "list organizations [session]"]);
     expect(fake.secretsInArgs, "a secret in an argument").toEqual([]);
     const text = JSON.stringify(vault.items());
     for (const value of [GITHUB_PASSWORD, STRIPE_KEY, NOTE, OAUTH_SECRET, "JBSWY3DPEHPK3PXP", CREDENTIALS.password]) expect(text).not.toContain(value);
     expect(linkedSites(vault, "pepper")).toEqual([{ site: "github.com", hosts: ["github.com"], exactHost: false, username: "deploy-bot" }]);
     // A secret by name: a Secure Note's text, and a Login's custom field; never a custom field named like a built-in one.
     expect(linkedSecrets(vault).map((secret) => [secret.name, secret.fields, secret.provider])).toEqual([["Acme OAuth", ["client_secret"], "bitwarden"], ["Stripe", [], "bitwarden"]]);
+  });
+
+  it("lists the logins an organization owns, not only the personal vault", async () => {
+    const { vault, fake } = setup({ organizations: [{ id: "org-1", name: "Acme", items: [
+      { id: "i-org-gitlab", name: "GitLab", type: 1, login: { uris: [{ uri: "https://gitlab.com" }], username: "team-bot", password: "fake-org-Passw0rd" } },
+    ] }] });
+    expect(await vault.refresh()).toMatchObject({ connected: true, items: 4 });
+    expect(linkedSites(vault, "pepper")).toContainEqual({ site: "gitlab.com", hosts: ["gitlab.com"], exactHost: false, username: "team-bot" });
+    expect(fake.calls).toContain("list items --organizationid org-1 [session]");
   });
 
   it("fills a login on its site with its password and 2FA key, read from Bitwarden at fill time", async () => {

@@ -12,7 +12,7 @@ export interface FakeBwItem {
   login?: { uris?: Array<{ uri: string }>; username?: string | null; password?: string | null; totp?: string | null };
 }
 
-export interface FakeBwAccount { clientId: string; clientSecret: string; password: string; email: string; items: FakeBwItem[] }
+export interface FakeBwAccount { clientId: string; clientSecret: string; password: string; email: string; items: FakeBwItem[]; organizations?: Array<{ id: string; name?: string; items: FakeBwItem[] }> }
 
 export function fakeBw(account: FakeBwAccount) {
   const state = { server: null as string | null, signedIn: null as string | null, sessions: new Set<string>(), unreachable: false, slow: false, limited: false };
@@ -57,7 +57,16 @@ export function fakeBw(account: FakeBwAccount) {
     if (!state.signedIn) return fail("You are not logged in.");
     if (!env.BW_SESSION || !state.sessions.has(env.BW_SESSION)) return fail("Vault is locked.");
     if (command === "sync") return state.unreachable ? fail("fetch failed: connect ECONNREFUSED 203.0.113.7:443") : ok("Syncing complete.");
-    if (command === "list" && args[1] === "items") return ok(JSON.stringify(account.items.map((item) => ({ object: "item", ...item }))));
+    if (command === "list" && args[1] === "items") {
+      const organizationId = args[2] === "--organizationid" ? args[3] : undefined;
+      const items = organizationId === undefined
+        ? account.items
+        : account.organizations?.find((organization) => organization.id === organizationId)?.items ?? [];
+      return ok(JSON.stringify(items.map((item) => ({ object: "item", ...item }))));
+    }
+    if (command === "list" && args[1] === "organizations") {
+      return ok(JSON.stringify((account.organizations ?? []).map((organization) => ({ object: "organization", id: organization.id, name: organization.name ?? organization.id }))));
+    }
     if (command === "get" && args[1] === "item") {
       const item = account.items.find((one) => one.id === args[2]);
       return item ? ok(JSON.stringify({ object: "item", ...item })) : fail("Not found.");

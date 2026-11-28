@@ -233,8 +233,8 @@ export class BitwardenLogins implements VaultProvider {
       if (candidate) { this.session = null; await this.unlock(candidate, true); }
       await this.sync(credentials, true);
       // Every value in this answer is dropped here and read again when a bot uses it.
-      const listed = JSON.parse(await this.call(credentials, ["list", "items"])) as unknown;
-      const items = (Array.isArray(listed) ? listed as BwItem[] : []).filter((item) => typeof item?.id === "string" && (item.type === LOGIN || item.type === SECURE_NOTE)).slice(0, MAX_ITEMS);
+      const listed = await this.listItems(credentials);
+      const items = listed.filter((item) => typeof item?.id === "string" && (item.type === LOGIN || item.type === SECURE_NOTE)).slice(0, MAX_ITEMS);
       const logins: LoginEntry[] = [];
       const entries = new Map<string, ItemEntry>();
       for (const item of items) {
@@ -316,6 +316,27 @@ export class BitwardenLogins implements VaultProvider {
     if (!force && this.syncedAt !== null && this.now() - this.syncedAt < SYNC_EVERY_MS) return;
     await this.call(credentials, ["sync"]);
     this.syncedAt = this.now();
+  }
+
+  /** `bw list items` is the personal vault alone; an organization's logins need that organization named. A listing
+   * failure for one organization keeps the personal items rather than hiding the whole vault. */
+  private async listItems(credentials: BitwardenCredentials): Promise<BwItem[]> {
+    const parse = (text: string): BwItem[] => {
+      try {
+        const value = JSON.parse(text) as unknown;
+        return Array.isArray(value) ? value as BwItem[] : [];
+      } catch {
+        return [];
+      }
+    };
+    const items = parse(await this.call(credentials, ["list", "items"]));
+    const organizations = parse(await this.call(credentials, ["list", "organizations"]).catch(() => "[]")) as Array<{ id?: unknown }>;
+    for (const organization of organizations) {
+      if (typeof organization.id !== "string") continue;
+      const listed = await this.call(credentials, ["list", "items", "--organizationid", organization.id]).catch(() => "[]");
+      items.push(...parse(listed));
+    }
+    return [...new Map(items.filter((item) => typeof item?.id === "string").map((item) => [item.id, item])).values()];
   }
 
   private async item(itemId: string): Promise<BwItem | null> {
