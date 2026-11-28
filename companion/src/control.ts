@@ -26,6 +26,8 @@ export interface ControlOptions {
    * leaves Electron's encrypted store. */
   secretPublicKey?: () => string | null;
   hostedUrl?: () => string | null;
+  /** Custom HTTPS origins from OMB_COMPANION_EXTRA_URL, after the managed hosted route. */
+  extraUrls?: () => readonly string[];
   /** Electron publishes a route after its connector health check succeeds
    * and withdraws it on connector loss. */
   setHostedUrl?: (url: string | null) => void;
@@ -228,6 +230,8 @@ export function companionState(options: Omit<ControlOptions, "controlToken">) {
       addresses,
       name,
       currentHostedUrl(options),
+      undefined,
+      options.extraUrls?.() ?? [],
     ),
     ...(secretPublicKey ? { secretPublicKey } : {}),
     pairing: pairing ? { code: pairing.code, token: pairing.token, expiresAt: pairing.expiresAt } : null,

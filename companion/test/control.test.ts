@@ -11,6 +11,7 @@ let connectedDeviceIds: string[] = [];
 let disconnectedDeviceIds: string[] = [];
 let revokedDeviceIds: string[] = [];
 const routeBodies: unknown[] = [];
+const extraUrls: string[] = [];
 const CONTROL_TOKEN = "c".repeat(43);
 let controlToken: string | null = CONTROL_TOKEN;
 const withToken = { "x-openmausbot-control-token": CONTROL_TOKEN };
@@ -40,6 +41,7 @@ beforeAll(async () => {
     companionPort: 8810,
     secretPublicKey: () => "BIPBQ12_dWnF1DZLsTZO3Vg0NGjds5-jp9h3jhjr2To7bJelczS0LM82rfXV68PmSJhz2ePosj3fL974XckCpDU",
     hostedUrl: () => hostedUrl,
+    extraUrls: () => extraUrls,
     setHostedUrl: (next) => {
       hostedUrl = next;
     },
@@ -356,6 +358,16 @@ describe("hosted endpoint advertisement", () => {
     );
     expect(withdrawn.status).toBe(200);
     expect(withdrawn.body.endpoints.some((endpoint: { kind: string }) => endpoint.kind === "hosted")).toBe(false);
+  });
+
+  it("advertises custom HTTPS origins after the managed hosted route", async () => {
+    extraUrls.push("https://relay.example:8443");
+    try {
+      const hosted = (await ask("GET", "/state")).body.endpoints.filter((endpoint: { kind: string }) => endpoint.kind === "hosted");
+      expect(hosted.at(-1)).toEqual({ url: "https://relay.example:8443", kind: "hosted", priority: 50 });
+    } finally {
+      extraUrls.length = 0;
+    }
   });
 
   it("accepts exactly one string-or-null url field", async () => {

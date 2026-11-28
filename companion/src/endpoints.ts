@@ -20,12 +20,17 @@ export const MAX_COMPANION_ENDPOINTS = 8;
 export function hostedCompanionUrl(value: string | undefined): string | null {
   const configured = value?.trim();
   if (!configured) return null;
+  return companionHttpsOrigin(configured, "OMB_COMPANION_HOSTED_URL");
+}
 
+/** One origin, or one reason it cannot be a companion route. The variable name
+ * is in the message because a typo stops the sidecar before it serves. */
+function companionHttpsOrigin(configured: string, name: string): string {
   let parsed: URL;
   try {
     parsed = new URL(configured);
   } catch {
-    throw new Error("OMB_COMPANION_HOSTED_URL must be an absolute HTTPS origin");
+    throw new Error(`${name} must be an absolute HTTPS origin`);
   }
 
   if (
@@ -36,10 +41,21 @@ export function hostedCompanionUrl(value: string | undefined): string | null {
     parsed.search ||
     parsed.hash
   ) {
-    throw new Error("OMB_COMPANION_HOSTED_URL must be an HTTPS origin without a path, credentials, query, or fragment");
+    throw new Error(`${name} must be an HTTPS origin without a path, credentials, query, or fragment`);
   }
 
   return parsed.origin;
+}
+
+/** Custom HTTPS origins in `OMB_COMPANION_EXTRA_URL` (commas or newlines), for a
+ * self-hosted reverse proxy in front of this companion. Empty entries are skipped. */
+export function extraCompanionUrls(value: string | undefined): string[] {
+  const origins = (value ?? "")
+    .split(/[\n,]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => companionHttpsOrigin(entry, "OMB_COMPANION_EXTRA_URL"));
+  return [...new Set(origins)].slice(0, MAX_COMPANION_ENDPOINTS);
 }
 
 const httpOrigin = (host: string, port: number): string => {
@@ -47,20 +63,24 @@ const httpOrigin = (host: string, port: number): string => {
   return `http://${authority}:${port}`;
 };
 
-/** Best first: the hosted HTTPS route when configured, then the direct routes
- * in the host list's order, Bonjour last. The cap bounds QR size and the
- * connection walk. */
+/** Best first: the hosted HTTPS route when configured, then custom HTTPS origins,
+ * then the direct routes in the host list's order, Bonjour last. The cap bounds QR
+ * size and the connection walk. */
 export function companionEndpointCandidates(
   port: number,
   addresses: string[] = routedAddresses(),
   magicDnsName: string | null = tailnetName(),
   hostedUrl: string | null = null,
   bonjourHost: string | null = directRoutes().wifi ? defaultHostName() : null,
+  extraUrls: readonly string[] = [],
 ): CompanionEndpoint[] {
   const tailscale = tailscaleAddress(addresses);
   const candidates: CompanionEndpoint[] = [];
 
   if (hostedUrl) candidates.push({ url: hostedUrl, kind: "hosted", priority: 0 });
+  extraUrls.forEach((url, index) => {
+    candidates.push({ url, kind: "hosted", priority: 50 + index });
+  });
   if (tailscale && magicDnsName) {
     candidates.push({ url: httpOrigin(magicDnsName, port), kind: "tailnet", priority: 100 });
   }

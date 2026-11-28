@@ -11,7 +11,7 @@ import { createAddressWatcher } from "./advertise-watch.ts";
 import { createControlServer, hostCandidates, initialControlToken } from "./control.ts";
 import { createConnectedDeviceTracker } from "./connected-devices.ts";
 import { DeviceRegistry } from "./devices.ts";
-import { companionEndpointCandidates, hostedCompanionUrl } from "./endpoints.ts";
+import { companionEndpointCandidates, extraCompanionUrls, hostedCompanionUrl } from "./endpoints.ts";
 import { tailnetName, tailscaleAddress } from "./listener.ts";
 import { acceptsConnection, anyDirectRoute, directRoutes, directRoutesFromEnv, routedAddresses, setDirectRoutes } from "./direct-routes.ts";
 import {
@@ -94,6 +94,7 @@ const COMPANION_PORT = num(process.env.OMB_COMPANION_PORT, 8810);
 const CONTROL_PORT = num(process.env.OMB_CONTROL_PORT, 8811);
 const SERVICE_TYPE = "_openmausbot._tcp";
 let hostedUrl = hostedCompanionUrl(process.env.OMB_COMPANION_HOSTED_URL);
+const extraUrls = extraCompanionUrls(process.env.OMB_COMPANION_EXTRA_URL);
 directRoutesFromEnv(process.env);
 const PRIVATE_ORIGIN = companionOriginSocket(process.env.OMB_COMPANION_INTERNAL_ORIGIN);
 const SECRET_PUBLIC_KEY = normalizedPhoneSecretPublicKey(
@@ -178,7 +179,7 @@ const proxy = createProxyHandler({
     serverName: machineName,
     version: process.env.OMB_APP_VERSION,
     hosts: () => hostCandidates(),
-    endpoints: () => companionEndpointCandidates(COMPANION_PORT, undefined, undefined, hostedUrl),
+    endpoints: () => companionEndpointCandidates(COMPANION_PORT, undefined, undefined, hostedUrl, undefined, extraUrls),
     connected: connectedDevices.open,
     e2eDescriptor: (deviceId) => e2e.descriptor(deviceId),
     e2ePaired: (context, deviceId) => e2e.paired(context, deviceId),
@@ -281,6 +282,7 @@ const control = createControlServer({
   companionPort: COMPANION_PORT,
   secretPublicKey: () => SECRET_PUBLIC_KEY,
   hostedUrl: () => hostedUrl,
+  extraUrls: () => extraUrls,
   setHostedUrl: (next) => {
     hostedUrl = next;
   },

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   companionEndpointCandidates,
+  extraCompanionUrls,
   hostedCompanionUrl,
   MAX_COMPANION_ENDPOINTS,
 } from "../src/endpoints.ts";
@@ -25,6 +26,36 @@ describe("hostedCompanionUrl", () => {
       "not a URL",
     ]) {
       expect(() => hostedCompanionUrl(value)).toThrow(/OMB_COMPANION_HOSTED_URL/);
+    }
+  });
+});
+
+describe("extraCompanionUrls", () => {
+  it("reads custom HTTPS origins separated by commas or newlines", () => {
+    expect(extraCompanionUrls(" https://relay.example ,\nhttps://relay2.example:8443\n")).toEqual([
+      "https://relay.example",
+      "https://relay2.example:8443",
+    ]);
+    expect(extraCompanionUrls(undefined)).toEqual([]);
+    expect(extraCompanionUrls(" , \n")).toEqual([]);
+  });
+
+  it("normalizes, dedupes and caps the list", () => {
+    expect(extraCompanionUrls("https://Relay.Example/ , https://relay.example")).toEqual(["https://relay.example"]);
+    const many = Array.from({ length: 10 }, (_, index) => `https://r${index}.example`).join(",");
+    expect(extraCompanionUrls(many)).toHaveLength(MAX_COMPANION_ENDPOINTS);
+  });
+
+  it("refuses insecure or ambiguous origins, naming the variable", () => {
+    for (const value of [
+      "http://relay.example",
+      "https://user:secret@relay.example",
+      "https://relay.example/companion",
+      "https://relay.example?device=one",
+      "https://relay.example#pair",
+      "not a URL",
+    ]) {
+      expect(() => extraCompanionUrls(value)).toThrow(/OMB_COMPANION_EXTRA_URL/);
     }
   });
 });
@@ -68,6 +99,32 @@ describe("companionEndpointCandidates", () => {
       { url: "http://192.168.1.42:8810", kind: "lan", priority: 200 },
       { url: "http://openmausbot-abcd1234.local:8810", kind: "bonjour", priority: 300 },
     ]);
+  });
+
+  it("tries custom HTTPS origins after the managed hosted route and before direct ones", () => {
+    expect(
+      companionEndpointCandidates(
+        8810,
+        ["100.121.5.6", "192.168.1.42"],
+        "macbook.tail1234.ts.net",
+        "https://device-123.companion.example",
+        "openmausbot-abcd1234.local",
+        ["https://relay.example", "https://relay2.example:8443"],
+      ),
+    ).toEqual([
+      { url: "https://device-123.companion.example", kind: "hosted", priority: 0 },
+      { url: "https://relay.example", kind: "hosted", priority: 50 },
+      { url: "https://relay2.example:8443", kind: "hosted", priority: 51 },
+      { url: "http://macbook.tail1234.ts.net:8810", kind: "tailnet", priority: 100 },
+      { url: "http://192.168.1.42:8810", kind: "lan", priority: 201 },
+      { url: "http://openmausbot-abcd1234.local:8810", kind: "bonjour", priority: 300 },
+    ]);
+  });
+
+  it("keeps one entry when a custom origin repeats the managed hosted route", () => {
+    expect(
+      companionEndpointCandidates(8810, [], null, "https://device-123.companion.example", null, ["https://device-123.companion.example"]),
+    ).toEqual([{ url: "https://device-123.companion.example", kind: "hosted", priority: 0 }]);
   });
 
   it("caps pathological interface lists without losing the Bonjour fallback", () => {
