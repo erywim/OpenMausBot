@@ -36,7 +36,8 @@ const ALLOWED: Record<string, Array<[BoardItemState, BoardMove["move"], BoardAct
     ["ready", "take", DISPATCHER], ["working", "done", DISPATCHER], ["working", "failed", DISPATCHER], ["working", "release", DISPATCHER],
     ["needs_person", "resume", DISPATCHER], ["needs_person", "release", DISPATCHER],
   ],
-  holder: [["working", "done", HOLDER], ["working", "failed", HOLDER], ["working", "ask", HOLDER], ["working", "release", HOLDER], ["working", "later", HOLDER]],
+  holder: [["working", "done", HOLDER], ["working", "failed", HOLDER], ["working", "ask", HOLDER], ["working", "release", HOLDER], ["working", "later", HOLDER],
+    ["needs_person", "resume", HOLDER], ["needs_person", "release", HOLDER]],
   person: [
     ["waiting", "done", PERSON], ["ready", "done", PERSON], ["working", "done", PERSON], ["needs_person", "done", PERSON],
     ["needs_person", "release", PERSON],
@@ -91,6 +92,20 @@ describe("moves", () => {
     expect(released.state).toBe("ready");
     expect(released.holder).toBeUndefined();
     expect(released.question).toBeUndefined();
+  });
+
+  it("the holder withdraws its own question: resume puts it back to work, release frees it", () => {
+    const asked = inState("needs_person");
+    const resumed = applyMove(asked, { move: "resume" }, HOLDER, [], T + 2);
+    expect(resumed).toMatchObject({ state: "working", holder: { botId: "scout", since: T + 2 } });
+    expect(resumed.question).toBeUndefined();
+    const released = applyMove(asked, { move: "release" }, HOLDER, [], T + 3);
+    expect(released.state).toBe("ready");
+    expect(released.holder).toBeUndefined();
+    expect(released.question).toBeUndefined();
+    for (const move of [{ move: "resume" }, { move: "release" }] as BoardMove[]) {
+      expect(() => applyMove(asked, move, OTHER_BOT, [], T + 4)).toThrow(expect.objectContaining({ code: "board_bad_move" }));
+    }
   });
 
   it("reopen resets the tries and the result, and waits again when a need is not done", () => {

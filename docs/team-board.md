@@ -68,10 +68,11 @@ A room holds at most 200 items that are not settled.
   last need is done; a failed or cancelled need readies nothing.
 - `ready` → `working`: the server gives it to a bot (see Dispatch).
 - `working` → `done`, `failed`, `needs_person` (the bot asked someone) or back to `ready` (released, or the turn ended
-  without settling it). `needs_person` → `working` when the person replies, `ready` when a person releases it, or
-  `cancelled`.
+  without settling it). `needs_person` → `working` when the person replies or the bot picks its question back up
+  (`resume`), `ready` when a person or the bot releases it, or `cancelled`.
 - A person may cancel any open item, mark any open item done, release one waiting on a person, and reopen a settled
-  one (its tries start again from 0, and it waits again if a need is not done). A bot may cancel an open item it made.
+  one (its tries start again from 0, and it waits again if a need is not done). A bot may cancel an open item it made,
+  and withdraw its own question (`resume` or `release`).
 - An item that is removed, or whose thread or room is deleted, stops being needed: what waited only on it is ready.
 
 Every other move is refused with 409 `board_bad_move`. The rules are `server/board/state.ts`.
@@ -121,8 +122,9 @@ cannot reach them.
 - `board_update` `{ item?, move?, text?, person?, minutes?, labels? }`: the item of this thread unless `item` is given.
   `done` and `failed` take `text` as the result; `ask` posts `text` as the bot's line in the thread and puts it in the
   inbox of `person` (a teammate's name or email), else of the person who made the item, and keeps their name on the item; `later` takes `minutes` (1 to
-  1,440) and `text` as the note; `release` hands it back to ready. `labels` replaces them. Only the bot holding an item
-  may settle, ask about or set it aside.
+  1,440) and `text` as the note; `release` hands it back to ready, and `resume` takes the bot's own question back to
+  working; both let the holder withdraw a question it no longer needs. `labels` replaces them. Only the bot holding an
+  item may settle, ask about, set it aside or withdraw its question.
 
 ## Routes
 

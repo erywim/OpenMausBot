@@ -123,8 +123,8 @@ function allowed(item: BoardItem, move: BoardMove["move"], actor: BoardActor): b
     case "ask": return state === "working" && holds(item, actor);
     case "later": return state === "working" && holds(item, actor);
     case "wake": return state === "working" && dispatcher && item.later !== undefined;
-    case "resume": return state === "needs_person" && dispatcher;
-    case "release": return state === "working" ? dispatcher || holds(item, actor) : state === "needs_person" && (person || dispatcher);
+    case "resume": return state === "needs_person" && (dispatcher || holds(item, actor));
+    case "release": return state === "working" ? dispatcher || holds(item, actor) : state === "needs_person" && (person || dispatcher || holds(item, actor));
     case "cancel": return isOpen(state) && (person || madeIt(item, actor));
     case "reopen": return !isOpen(state) && person;
   }

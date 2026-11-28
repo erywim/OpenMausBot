@@ -58,13 +58,13 @@ export const BOARD_TOOL_DEFINITIONS = [
   },
   {
     name: "board_update",
-    description: "Settle the item you hold (default: this thread's): done or failed (text = result), ask a person (text = question), later (minutes; text = note) or release.",
+    description: "Settle the item you hold (default: this thread's): done or failed (text = result), ask a person (text = question), later (minutes; text = note), resume a question you no longer need, or release.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
       properties: {
         item: { type: "string", description: "Item id from board_list." },
-        move: { type: "string", enum: ["done", "failed", "ask", "later", "release"] },
+        move: { type: "string", enum: ["done", "failed", "ask", "later", "resume", "release"] },
         text: { type: "string", maxLength: 2000 },
         person: { type: "string", description: "ask: who; default: who made the item." },
         minutes: { type: "integer", minimum: 1, maximum: 1440 },

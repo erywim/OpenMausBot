@@ -3,9 +3,9 @@
 // anywhere else they answer 404 like an unknown path.
 //   POST /api/internal/board/add      new room threads, each an item, needs given by keys of the same call
 //   POST /api/internal/board/list     the items of the rooms the bot is in
-//   POST /api/internal/board/update   the bot settles, asks about, sets aside, hands back or labels an item
+//   POST /api/internal/board/update   the bot settles, asks about, sets aside, withdraws, hands back or labels an item
 // Security: a bot sees and adds items only in rooms it is a member of; which moves it may make is the state machine's
-// (server/board/state.ts): only the bot holding an item may settle, ask about or set it aside.
+// (server/board/state.ts): only the bot holding an item may settle, ask about, set it aside or withdraw its question.
 import { z } from "zod";
 
 import { BOARD_LIMITS, type BoardItem, type BoardItemState } from "../../shared/board.ts";
@@ -195,7 +195,7 @@ export function createBoardToolRoutes(deps: BoardToolDeps): RouteHandler {
     }
     const move = body.move?.trim().toLowerCase();
     const text = body.text?.trim() ?? "";
-    if (move === undefined && body.labels === undefined) return { status: 400, text: `Say a move (done, failed, ask, later or release) or labels. ${UPDATE_EXAMPLE}` };
+    if (move === undefined && body.labels === undefined) return { status: 400, text: `Say a move (done, failed, ask, later, resume or release) or labels. ${UPDATE_EXAMPLE}` };
     const actor = { kind: "bot" as const, botId };
     if (move === "ask") {
       if (!text) return { status: 400, text: 'ask needs text: the question. Example: {"move":"ask","text":"Which client is this for?","person":"Mira"}' };
@@ -220,13 +220,15 @@ export function createBoardToolRoutes(deps: BoardToolDeps): RouteHandler {
     const moves: Record<string, () => Parameters<Board["patch"]>[1]["move"]> = {
       done: () => ({ move: "done", ...(text ? { result: text } : {}) }),
       failed: () => ({ move: "failed", ...(text ? { result: text } : {}) }),
+      resume: () => ({ move: "resume" }),
       release: () => ({ move: "release" }),
     };
-    if (move !== undefined && !Object.hasOwn(moves, move)) return { status: 400, text: `move is one of done, failed, ask, later or release. ${UPDATE_EXAMPLE}` };
+    if (move !== undefined && !Object.hasOwn(moves, move)) return { status: 400, text: `move is one of done, failed, ask, later, resume or release. ${UPDATE_EXAMPLE}` };
     const changed = deps.board.patch(item.threadId, { ...(move ? { move: moves[move]!() } : {}), ...(body.labels !== undefined ? { labels: body.labels } : {}) }, actor);
     const after: Record<string, string> = {
       done: "Marked done; items waiting on it are ready now. End your turn with a short summary.",
       failed: "Marked failed. End your turn with one line on why.",
+      resume: "Your question is withdrawn and the item is yours again. Carry on and settle it.",
       release: "Handed back; another free bot of the room may take it. End your turn.",
     };
     return { status: 200, text: move ? after[move]! : `Labels set: ${Object.entries(changed.labels).map(([key, value]) => `${key}=${value}`).join(", ") || "none"}.` };
