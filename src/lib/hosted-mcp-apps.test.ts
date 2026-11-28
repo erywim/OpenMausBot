@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { RESERVED_MCP_NAMES } from "../../shared/mcp-name";
 import { HOSTED_MCP_APPS, hostedConnections, hostedMcpApp, hostedServerName, type HostedApp } from "./hosted-mcp-apps";
 
 describe("hosted MCP apps", () => {
@@ -56,6 +57,14 @@ describe("hosted MCP apps", () => {
   it("takes a pasted key exactly for the services with no browser sign-in, each with an https page to make one", () => {
     expect(HOSTED_MCP_APPS.filter((app) => "key" in app).map((app) => app.id)).toEqual(["vapi", "telnyx"]);
     for (const app of HOSTED_MCP_APPS) if ("key" in app) expect(app.key.url).toMatch(/^https:\/\//);
+  });
+
+  it("offers the person's own Composio account as one MCP server, apart from the built-in bridge", () => {
+    const app = HOSTED_MCP_APPS.find((candidate) => candidate.id === "composio-connect")!;
+    expect(app).toMatchObject({ label: "Composio Connect", url: "https://connect.composio.dev/mcp" });
+    expect("key" in app).toBe(false);
+    expect(RESERVED_MCP_NAMES.has("composio")).toBe(true);
+    expect(RESERVED_MCP_NAMES.has(app.id)).toBe(false);
   });
 
   it("counts each app on its own server", () => {

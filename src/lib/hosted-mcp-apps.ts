@@ -1,4 +1,4 @@
-import { Clapperboard, CreditCard, Mail, PhoneCall, RadioTower, Smartphone, type LucideIcon } from "lucide-react";
+import { Blocks, Clapperboard, CreditCard, Mail, PhoneCall, RadioTower, Smartphone, type LucideIcon } from "lucide-react";
 
 import bubblavLogo from "@/assets/bubblav/logo.png";
 import whopLogo from "@/assets/whop/logo.png";
@@ -103,6 +103,16 @@ export const HOSTED_MCP_APPS = [
     description: "higgsfield.description",
     notice: "higgsfield.notice",
     keywords: "higgsfield ai image video generate generation picture clip film soul kling seedance",
+  },
+  {
+    id: "composio-connect",
+    label: "Composio Connect",
+    url: "https://connect.composio.dev/mcp",
+    // Composio publishes no logo licence we have checked, so a neutral glyph stands in.
+    icon: { glyph: Blocks },
+    description: "composioConnect.description",
+    notice: "composioConnect.notice",
+    keywords: "composio connect apps mcp oauth google sheets gmail slack github notion trello asana hubspot salesforce",
   },
 ] as const satisfies readonly HostedMcpApp[];
 

@@ -11868,6 +11868,8 @@
   "alwaysOn.status.noWay": "Casa ligada · nenhum celular ou computador consegue alcançá-la ainda",
   "higgsfield.description": "Imagens e vídeos de IA que seus bots criam com os modelos da Higgsfield, na sua própria conta da Higgsfield.",
   "higgsfield.notice": "Entre com a sua conta da Higgsfield. Não é preciso chave de API. Um bot que pode usar a Higgsfield pode iniciar gerações de imagens e vídeos que gastam créditos da sua conta, então escolha quais bots recebem esse acesso em Acesso dos bots.",
+  "composioConnect.description": "A sua própria conta do Composio em uma única conexão MCP: os apps já autorizados lá, sem entrar em cada um de novo.",
+  "composioConnect.notice": "Entre com o Composio. Uma conexão leva todos os apps autorizados na sua conta do Composio, então escolha quais bots podem alcançá-la em Acesso dos bots. Ela é separada dos Apps conectados: a chave própria do OpenMausBot para o Composio e os controles por app não valem aqui.",
   "imageGen.slot.needsHiggsfield": "Precisa da Higgsfield conectada: conecte abaixo.",
   "imageGen.higgsfield.connected": "Conectado à sua conta da Higgsfield",
   "imageGen.higgsfield.notConnected": "Não conectado, ou o login expirou",
