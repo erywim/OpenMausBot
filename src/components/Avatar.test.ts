@@ -131,6 +131,15 @@ describe("theme hooks on faces", () => {
     expect(render({})).not.toContain("data-avatar");
   });
 
+  it("says which state a bot's custom picture is in, so a theme can show it", () => {
+    const picture = (state?: MausAvatarProps["state"]) => renderToStaticMarkup(createElement(BotAvatar, {
+      bot: { color: "green", avatarUrl: "/api/attachments/a.png", avatarCrop: "circle" }, animated: false, ...(state ? { state } : {}),
+    }));
+    expect(picture("working")).toMatch(/data-avatar="picture"[^>]*data-bot-state="working"/);
+    expect(picture("thinking")).toContain('data-bot-state="thinking"');
+    expect(picture(), "a picture with no state is idle").toContain('data-bot-state="idle"');
+  });
+
   it("marks the person's picture and their initials", () => {
     expect(renderToStaticMarkup(createElement(InitialsAvatar, { initials: "AL", avatarUrl: "/api/attachments/me.png" }))).toMatch(/<img data-avatar="picture" data-avatar-kind="person"/);
     expect(renderToStaticMarkup(createElement(InitialsAvatar, { initials: "AL" }))).toMatch(/<div data-avatar="initials" data-avatar-kind="person"/);

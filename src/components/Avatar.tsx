@@ -286,6 +286,7 @@ export function BotAvatar({ bot, size = 44, label, readable = false, ...mascotPr
   return (
     <span
       {...avatarMarks("bot", "picture")}
+      data-bot-state={mascotProps.state ?? "idle"}
       className="relative block shrink-0 overflow-hidden bg-raised"
       style={{ width: size, height: size, borderRadius: radius }}
     >
