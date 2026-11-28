@@ -92,6 +92,8 @@ function AddedServers({ servers }: { servers: ReturnType<typeof addedServers> })
   const [url, setUrl] = useState("");
   const [key, setKey] = useState("");
   const [models, setModels] = useState("");
+  /** The server serves a local model from a tunnel, VPN or reverse-proxy address. */
+  const [local, setLocal] = useState(false);
   const [busy, setBusy] = useState<"add" | "other" | null>(null);
   /** The last failure, and the server whose model-ID editor it belongs to (shown there instead of below the add form). */
   const [error, setError] = useState<{ text: string; at?: string } | null>(null);
@@ -124,12 +126,12 @@ function AddedServers({ servers }: { servers: ReturnType<typeof addedServers> })
     "add",
     () => api("/api/instances/openai-compat", {
       method: "POST",
-      body: JSON.stringify({ displayName: name.trim(), url: url.trim(), key: key.trim(), ...(modelIds(models).length ? { models: modelIds(models) } : {}) }),
+      body: JSON.stringify({ displayName: name.trim(), url: url.trim(), key: key.trim(), ...(modelIds(models).length ? { models: modelIds(models) } : {}), ...(local ? { local: true } : {}) }),
     }).then(
       (added) => { keySaved("custom_endpoint", "settings", "unverified"); return added; },
       (cause: unknown) => { keySaved("custom_endpoint", "settings", "error"); throw cause; },
     ),
-    () => { setName(""); setUrl(""); setKey(""); setModels(""); },
+    () => { setName(""); setUrl(""); setKey(""); setModels(""); setLocal(false); },
   );
 
   return (
@@ -258,6 +260,13 @@ function AddedServers({ servers }: { servers: ReturnType<typeof addedServers> })
         <input value={models} onChange={(e) => setModels(e.target.value)} placeholder={t("apiInstances.models")} aria-label={t("apiInstances.models")}
           spellCheck={false} disabled={busy !== null} className={INPUT} />
         <p className="text-[12px] leading-4 text-ink-secondary">{t("apiInstances.modelsHint")}</p>
+        <label className="flex items-start gap-2 text-[13px]">
+          <input className="mt-1 accent-accent" type="checkbox" checked={local} onChange={(e) => setLocal(e.target.checked)} disabled={busy !== null} />
+          <span className="text-ink">
+            {t("apiInstances.localModel")}
+            <span className="mt-0.5 block text-[12px] leading-4 text-ink-secondary">{t("apiInstances.localModelHint")}</span>
+          </span>
+        </label>
         <button
           type="button"
           onClick={add}

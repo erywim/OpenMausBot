@@ -539,6 +539,11 @@ describe("a bot on a local model gets the bridge without the switch", () => {
     expect(agentsToolBridgeRefusal({}, onOllama, onServer("https://openrouter.ai/api/v1"), {})).toBeNull();
   });
 
+  it("on a tunnel address the person marked local", () => {
+    expect(agentsToolBridgeRefusal({}, {}, { driverKind: "openai-compat", config: { url: "https://tunnel.example.test/v1", local: true } }, {})).toBeNull();
+    expect(agentsToolBridgeRefusal({}, {}, { driverKind: "openai-compat", config: { url: "https://tunnel.example.test/v1" } }, {})).toBe("the switch is off");
+  });
+
   it("not on a hosted model", () => {
     expect(agentsToolBridgeRefusal({}, { modelSelection: { model: "gpt-5" } }, onServer("https://openrouter.ai/api/v1"), {})).toBe("the switch is off");
     expect(agentsToolBridgeRefusal({}, {}, { driverKind: "grok", config: { url: "http://127.0.0.1:1/v1" } }, {})).toBe("the switch is off");

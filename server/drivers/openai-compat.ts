@@ -106,6 +106,15 @@ export interface OpenAICompatConfig {
   reasoningEfforts?: Record<string, string[]>;
   /** How long a turn waits for the next piece of a reply before giving up; unset follows the server's default. */
   replyWaitMinutes?: number;
+  /** The server serves a local model from an address that is not on this machine or network: a tunnel, a VPN
+   * hostname or a reverse proxy in front of Ollama, LM Studio or llama.cpp. Local-model turn handling applies. */
+  local?: boolean;
+}
+
+/** Whether a turn on this server gets local-model handling: text-form tool-call recovery, the repeat guard and
+ * corrective rounds. An address on this network says yes on its own; `local` opts in one that is not. */
+export function servesLocalModel(config: Pick<OpenAICompatConfig, "url" | "local">): boolean {
+  return config.local === true || onThisNetwork(config.url);
 }
 
 const CATALOGS = ["openai", "lmstudio", "ollama"] as const;
@@ -163,6 +172,7 @@ function decodeConfig(raw: unknown): OpenAICompatConfig {
   const ownKey = typeof config.apiKeyEnv === "string" && OWN_KEY_ENVS.has(config.apiKeyEnv);
   if (config.catalog !== undefined && !CATALOGS.includes(config.catalog as never)) throw new Error("catalog must be \"openai\", \"lmstudio\" or \"ollama\"");
   if (config.replyWaitMinutes !== undefined && !isReplyWait(config.replyWaitMinutes)) throw new Error(`replyWaitMinutes must be a whole number from 1 to ${MAX_REPLY_WAIT_MINUTES}`);
+  if (config.local !== undefined && typeof config.local !== "boolean") throw new Error("local must be a boolean");
   const envUrl = ownKey ? undefined : process.env.OPENAI_COMPAT_URL;
   const inherits = !ownKey && onWorkspaceServer(config.url, envUrl);
   return {
@@ -170,6 +180,7 @@ function decodeConfig(raw: unknown): OpenAICompatConfig {
     ...(config.managedModels ? { managedModels: config.managedModels as string[] } : {}),
     ...(reasoningEfforts ? { reasoningEfforts } : {}),
     ...(isReplyWait(config.replyWaitMinutes) ? { replyWaitMinutes: config.replyWaitMinutes } : {}),
+    ...(config.local === true ? { local: true } : {}),
     url: (typeof config.url === "string" && config.url ? config.url : envUrl || "https://openrouter.ai/api/v1")
       .replace(/\/+$/, ""),
     apiKeyEnv: typeof config.apiKeyEnv === "string" && config.apiKeyEnv
@@ -433,7 +444,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       missingKeyError: missingKey,
       unavailableReason: missingKey,
       timeoutMs: config.replyWaitMinutes ? config.replyWaitMinutes * 60_000 : idleTimeoutMs(),
-      ...(onThisNetwork(config.url) ? { livenessEveryMs: livenessEveryMs(), localModel: true } : {}),
+      ...(servesLocalModel(config) ? { livenessEveryMs: livenessEveryMs(), localModel: true } : {}),
       reasoning: true,
       billing: "metered",
       includeUsageInCompleted: true,

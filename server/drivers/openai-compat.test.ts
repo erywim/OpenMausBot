@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { recordEvents } from "../testing/events.ts";
 import { buildTurnContext, replaysNatively } from "../turn-context.ts";
 import { instanceConfigs } from "../config.ts";
-import { OpenAICompatDriver } from "./openai-compat.ts";
+import { OpenAICompatDriver, servesLocalModel } from "./openai-compat.ts";
 import { flushNativeLogs } from "./native.ts";
 
 describe("OpenAICompatDriver", () => {
@@ -1342,6 +1342,21 @@ it("openai-compat preserves an explicit tools-off connection and rejects ambiguo
   expect(OpenAICompatDriver.decodeConfig({ tools: false })).toMatchObject({ tools: false });
   expect(OpenAICompatDriver.decodeConfig({ tools: true })).toMatchObject({ tools: true });
   expect(() => OpenAICompatDriver.decodeConfig({ tools: "false" })).toThrow("tools must be a boolean");
+});
+
+describe("a server marked local", () => {
+  it("keeps the mark only when it is true, and refuses a non-boolean", () => {
+    expect(OpenAICompatDriver.decodeConfig({ url: "https://tunnel.example.test/v1", local: true })).toMatchObject({ local: true });
+    expect(OpenAICompatDriver.decodeConfig({ url: "https://tunnel.example.test/v1", local: false })).not.toHaveProperty("local");
+    expect(OpenAICompatDriver.decodeConfig({ url: "https://tunnel.example.test/v1" })).not.toHaveProperty("local");
+    expect(() => OpenAICompatDriver.decodeConfig({ local: "yes" })).toThrow("local must be a boolean");
+  });
+
+  it("counts as local at any address, and an unmarked one only on this network", () => {
+    expect(servesLocalModel({ url: "https://tunnel.example.test/v1", local: true })).toBe(true);
+    expect(servesLocalModel({ url: "https://tunnel.example.test/v1" })).toBe(false);
+    expect(servesLocalModel({ url: "http://10.0.0.5:11434/v1" })).toBe(true);
+  });
 });
 
 describe("how long a turn waits for a reply", () => {

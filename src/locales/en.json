@@ -7700,6 +7700,8 @@
   "apiInstances.key": "API key",
   "apiInstances.models": "Model IDs, separated by commas (optional)",
   "apiInstances.modelsHint": "Leave the model IDs empty to detect them. If the model picker then shows only sample models, this server does not list its models: enter them here.",
+  "apiInstances.localModel": "This server runs a local model",
+  "apiInstances.localModelHint": "Turn this on when the address is a tunnel, VPN or reverse proxy in front of Ollama, LM Studio or llama.cpp. Bots then handle this model's tool calls the way they do for a model on this machine.",
   "apiInstances.geminiPreset": "Fill in Google Gemini",
   "apiInstances.geminiKeyHint": "Paste a Gemini API key from Google AI Studio (aistudio.google.com/apikey). Models are detected after you add it.",
   "apiInstances.add": "Add server",

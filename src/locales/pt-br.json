@@ -7311,6 +7311,8 @@
   "apiInstances.key": "Chave de API",
   "apiInstances.models": "IDs de modelos, separados por vírgulas (opcional)",
   "apiInstances.modelsHint": "Deixe os IDs em branco para detectar os modelos automaticamente. Se o seletor mostrar só modelos de exemplo, este servidor não lista os modelos disponíveis. Nesse caso, digite os IDs aqui.",
+  "apiInstances.localModel": "Este servidor roda um modelo local",
+  "apiInstances.localModelHint": "Ative quando o endereço for um túnel, VPN ou proxy reverso na frente do Ollama, LM Studio ou llama.cpp. Os bots passam a tratar as chamadas de ferramenta deste modelo como as de um modelo nesta máquina.",
   "apiInstances.geminiPreset": "Preencher com Google Gemini",
   "apiInstances.geminiKeyHint": "Cole uma chave de API do Gemini gerada no Google AI Studio (aistudio.google.com/apikey). O app detecta os modelos depois que você adiciona a chave.",
   "apiInstances.add": "Adicionar servidor",

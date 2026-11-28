@@ -66,7 +66,7 @@ describe("other OpenAI-compatible servers", () => {
 
 describe("adding another OpenAI-compatible server", () => {
   const KEY = "sk-ZZtestSECRET0123456789";
-  type Props = { children?: ReactNode; servers?: unknown; onChange?: (event: { target: { value: string } }) => void; onClick?: () => void; "aria-label"?: string };
+  type Props = { children?: ReactNode; servers?: unknown; type?: string; onChange?: (event: { target: { value?: string; checked?: boolean } }) => void; onClick?: () => void; "aria-label"?: string };
   const nodes = (tree: ReactNode): Array<ReactElement<Props>> =>
     Children.toArray(tree).flatMap((child) => isValidElement<Props>(child) ? [child, ...nodes(child.props.children)] : []);
   const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
@@ -104,6 +104,19 @@ describe("adding another OpenAI-compatible server", () => {
     expect(fixture.api).toHaveBeenCalledExactlyOnceWith("/api/instances/openai-compat", expect.objectContaining({ method: "POST" }));
     expect(fixture.track.mock.calls).toEqual([["api_key_saved", { provider: "custom_endpoint", via: "settings", result }]]);
     expect(JSON.stringify(fixture.track.mock.calls)).not.toMatch(/ada|example|ZZtest|SECRET/);
+  });
+
+  it("marks a server behind a tunnel as local only when the box is ticked", async () => {
+    const box = () => form().find((node) => node.type === "input" && node.props.type === "checkbox")!;
+    expect(JSON.stringify(form().map((node) => node.props.children ?? ""))).toContain("tunnel");
+    fixture.values = [];
+    fixture.api.mockReset();
+    fixture.api.mockResolvedValue({ instances: [] });
+    await add();
+    expect(JSON.parse(String(fixture.api.mock.calls.at(-1)![1].body))).not.toHaveProperty("local");
+    box().props.onChange!({ target: { checked: true } });
+    await add();
+    expect(JSON.parse(String(fixture.api.mock.calls.at(-1)![1].body))).toMatchObject({ local: true });
   });
 
   it("fills in Google Gemini, so only the AI Studio key is left to paste", async () => {

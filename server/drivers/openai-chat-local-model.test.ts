@@ -50,7 +50,7 @@ const structured = (response: ServerResponse, name: string, id: string) =>
 const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); });
 
-async function fixture(script: Script, driver: "local" | "hosted" = "local") {
+async function fixture(script: Script, driver: "local" | "hosted" = "local", config: { host?: string; local?: boolean } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "omb-chat-local-"));
   const requests: ChatRequest[] = [];
   const server = createServer(async (request, response) => {
@@ -71,7 +71,7 @@ async function fixture(script: Script, driver: "local" | "hosted" = "local") {
   writeFileSync(helper, MCP_SCRIPT);
   const instance: ProviderInstance = await (driver === "hosted" ? GrokDriver : OpenAICompatDriver).create({
     instanceId: randomUUID(), displayName: "Local fixture", enabled: true,
-    config: { url: `http://127.0.0.1:${address.port}/v1`, apiKeyEnv: "FIXTURE_CHAT_KEY" },
+    config: { url: `http://${config.host ?? "127.0.0.1"}:${address.port}/v1`, apiKeyEnv: "FIXTURE_CHAT_KEY", ...(config.local ? { local: true } : {}) },
     environment: { FIXTURE_CHAT_KEY: "fixture-key" },
   });
   const recorder = recordEvents(instance.adapter);
@@ -169,6 +169,23 @@ describe("a tool call a local model wrote as text", () => {
 
   it("never does any of this for a hosted model", async () => {
     const f = await fixture((_body, response) => say(response, TAGGED), "hosted");
+    await f.start();
+    await f.completed();
+    expect(f.effects()).toEqual([]);
+    expect(f.requests).toHaveLength(1);
+    expect(f.shown()).toBe(TAGGED);
+  });
+
+  it("does all of this for a server marked local behind a tunnel address", async () => {
+    const f = await fixture((_body, response, round) => round === 1 ? say(response, TAGGED) : say(response, "Stored."), "local", { host: "0.0.0.0", local: true });
+    await f.start();
+    expect(await f.completed()).toMatchObject({ ok: true });
+    expect(f.effects()).toEqual([{ name: "receipt" }]);
+    expect(f.shown()).not.toContain("tool_call");
+  });
+
+  it("leaves a tunnel address alone without the mark", async () => {
+    const f = await fixture((_body, response) => say(response, TAGGED), "local", { host: "0.0.0.0" });
     await f.start();
     await f.completed();
     expect(f.effects()).toEqual([]);

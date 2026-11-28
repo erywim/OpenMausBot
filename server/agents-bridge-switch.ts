@@ -11,7 +11,7 @@ import { parseToolScope } from "../shared/tool-scope.ts";
 import { bridgedCallName } from "./agents-bridge-names.ts";
 import { TOOL_BRIDGE_ENV } from "./drivers/agents-bridge.ts";
 import { decodeInjectId } from "./drivers/local-inject.ts";
-import { onThisNetwork } from "./drivers/openai-compat.ts";
+import { servesLocalModel } from "./drivers/openai-compat.ts";
 import { resolveClaudeConfigDir } from "./drivers/claude.ts"; import { claudeCliSupports, parseClaudeCliVersion } from "./drivers/claude-cli-version.ts";
 import { claudeToolSearchOn, claudeToolSearchSetting } from "./drivers/claude-tool-search.ts";
 import { AGENTS_NODE_FLAG, SPAWNED_PROXIES } from "./proxy-paths.ts";
@@ -38,12 +38,12 @@ export function agentsToolBridgeEnabled(cfg: BridgeConfig, env: NodeJS.ProcessEn
 }
 
 /** A model on this machine or network reads the whole list on every turn, out of a small window and at laptop speed:
- * about 15,000 tokens before the person has said anything. OMB_AGENTS_TOOL_BRIDGE=0 still wins. */
+ * about 15,000 tokens before the person has said anything. A server marked local is treated the same. OMB_AGENTS_TOOL_BRIDGE=0 still wins. */
 function runsLocalModel(bot: { modelSelection?: { model?: unknown } } | null | undefined, engine: BridgeEngine | null | undefined): boolean {
   const model = bot?.modelSelection?.model;
   if (typeof model === "string" && decodeInjectId(model)) return true;
-  const url = (engine?.config as { url?: unknown } | undefined)?.url;
-  return engine?.driverKind === "openai-compat" && typeof url === "string" && onThisNetwork(url);
+  const config = engine?.config as { url?: unknown; local?: unknown } | undefined;
+  return engine?.driverKind === "openai-compat" && typeof config?.url === "string" && servesLocalModel({ url: config.url, local: config.local === true });
 }
 
 /** The engine a turn runs on, as far as the decision reads it. */
