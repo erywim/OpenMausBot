@@ -10,6 +10,7 @@ const COPY: Record<Feature, { title: LocaleKey; line: LocaleKey }> = {
   skillBurger: { title: "settings.features.skillBurger", line: "settings.features.skillBurgerLine" },
   threadTabs: { title: "settings.features.threadTabs", line: "settings.features.threadTabsLine" },
   suggestedReplies: { title: "settings.features.suggestedReplies", line: "settings.features.suggestedRepliesLine" },
+  skillsLibrary: { title: "settings.features.skillsLibrary", line: "settings.features.skillsLibraryLine" },
 };
 
 /** One switch kept in this place's config.json; shown once its server says it knows the switch. */
@@ -49,6 +50,7 @@ export function FeaturesPage() {
         <FeatureRow name="skillBurger" />
         <FeatureRow name="threadTabs" />
         <FeatureRow name="suggestedReplies" />
+        <FeatureRow name="skillsLibrary" />
       </SettingsRows>
     </SettingsGroup>
   );

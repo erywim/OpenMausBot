@@ -317,6 +317,23 @@ describe("Settings → Features", () => {
     expect(featureSwitches()).toEqual({ skillBurger: true, threadTabs: false, suggestedReplies: false });
   });
 
+  it("shows the Skills library switch, off until turned on, and saves it on", async () => {
+    const { api } = await import("@/state/store");
+    fixture.config = { features: { skillBurger: true, threadTabs: false, skillsLibrary: false } };
+    const html = render("features");
+    expect(html).toContain("Skills library");
+    expect(html).toContain("browse, import and assign skills");
+    expect(featureSwitches()).toEqual({ skillBurger: true, threadTabs: false, skillsLibrary: false });
+    fixture.switches.find((props) => (props as { "data-feature-switch"?: string })["data-feature-switch"] === "skillsLibrary")!.onClick!({} as never);
+    expect(api).toHaveBeenCalledWith("/api/config", { method: "PATCH", body: JSON.stringify({ features: { skillsLibrary: true } }) });
+    fixture.config = { features: { skillBurger: true, threadTabs: false, skillsLibrary: true } };
+    render("features");
+    expect(featureSwitches()).toEqual({ skillBurger: true, threadTabs: false, skillsLibrary: true });
+    expect(render("bots"), "the switch reveals the Skills section it gates").toContain('data-settings-block="skills"');
+    fixture.config = { features: { skillBurger: true, threadTabs: false, skillsLibrary: false } };
+    expect(render("bots")).not.toContain('data-settings-block="skills"');
+  });
+
   it("shows no Board switch on a Team Cloud, even from an older server that still reports one", () => {
     fixture.config = { cloudHome: true, team: { name: "Acme" }, features: { skillBurger: true, threadTabs: false, teamBoard: false } };
     expect(render("features")).not.toContain("Board");

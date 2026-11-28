@@ -12196,6 +12196,8 @@
   "settings.features.threadTabsLine": "Mostra as conversas de um bot como abas acima do chat",
   "settings.features.suggestedReplies": "Respostas sugeridas",
   "settings.features.suggestedRepliesLine": "Depois que um bot responde, sugere o que você pode dizer em seguida. A própria IA do bot escreve com o menor modelo dela, o que usa um pouco do seu plano ou crédito de API.",
+  "settings.features.skillsLibrary": "Biblioteca de habilidades",
+  "settings.features.skillsLibraryLine": "Mostra a seção Habilidades nas Configurações, onde você pode consultar, importar e atribuir habilidades aos bots",
   "composer.placeholder.newThread": "Comece uma conversa em {name}",
   "room.feed.aria": "Conversas em {name}",
   "room.feed.replyOne": "1 resposta",
